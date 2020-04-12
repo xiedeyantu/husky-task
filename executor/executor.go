@@ -29,12 +29,15 @@ func StartExecutor(name string, dsn string) {
 	core.Elector()
 	StartRenew()
 	StartScanner()
+	StartReDispatcher()
 	StartDispatcher()
 	StartActuator()
+	StartSetTaskResult()
 }
 
 func InitGRPool() {
 	core.ContextInstance.GRPool = grpool.New(10)
+	core.ContextInstance.TaskGRPool = grpool.New(20)
 }
 
 func StartClean() {
@@ -81,6 +84,17 @@ func StartDispatcher() {
 	})
 }
 
+func StartReDispatcher() {
+	corn, err := crontab.NewCrontab("executor-redispatcher", DispatcherInterval, core.ReDispatcher)
+	if err != nil || corn == nil {
+		log.Println("new crontab failed")
+		return
+	}
+	_ = core.ContextInstance.GRPool.Add(func() {
+		corn.Start()
+	})
+}
+
 func StartActuator() {
 	corn, err := crontab.NewCrontab("executor-actuator", ActuatorInterval, core.Actuator)
 	if err != nil || corn == nil {
@@ -89,5 +103,11 @@ func StartActuator() {
 	}
 	_ = core.ContextInstance.GRPool.Add(func() {
 		corn.Start()
+	})
+}
+
+func StartSetTaskResult() {
+	_ = core.ContextInstance.GRPool.Add(func() {
+		core.SetTaskResult()
 	})
 }

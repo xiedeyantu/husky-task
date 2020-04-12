@@ -11,7 +11,7 @@ var ContextInstance = Context{
 	ExecutorMap:    map[string]string{},
 	IsLeader:       false,
 	ChanTask:       make(chan model.Task, 0),
-	ChanTaskResult: make(chan string, 0),
+	ChanTaskResult: make(chan model.Task, 0),
 }
 
 type Context struct {
@@ -22,5 +22,6 @@ type Context struct {
 	GRPool         *grpool.Pool
 	mLock          sync.Mutex
 	ChanTask       chan model.Task
-	ChanTaskResult chan string
+	ChanTaskResult chan model.Task
+	TaskGRPool     *grpool.Pool
 }

@@ -30,3 +30,7 @@ func Clean() {
 		Scanner()
 	}
 }
+
+func CleanOldTask() {
+
+}

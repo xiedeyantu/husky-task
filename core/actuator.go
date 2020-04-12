@@ -8,7 +8,7 @@ import (
 
 var (
 	QueryTask        = "SELECT `id`,`context` FROM `task` WHERE `need_scan`='Need' and `executor_name`='%s'"
-	UpdateTaskStauts = "UPDATE `task` SET `status`='%s',`need_scan`='NotNeed',`update_time`=now() WHERE `id`=%d"
+	UpdateTaskStauts = "UPDATE `task` SET `status`='%s',`need_scan`='%s',`update_time`=now() WHERE `id`=%d"
 )
 
 func Actuator() {
@@ -36,7 +36,7 @@ func Actuator() {
 	}
 
 	for id, ctx := range task {
-		sql := fmt.Sprintf(UpdateTaskStauts, TaskRunning, id)
+		sql := fmt.Sprintf(UpdateTaskStauts, TaskRunning, Need, id)
 		_, err := ContextInstance.DBEngine.Exec(sql)
 		if err != nil {
 			msg := fmt.Sprintf("renew executor failed, msg: %v", err)
@@ -50,10 +50,14 @@ func Actuator() {
 			Context: ctx,
 		}
 		ContextInstance.ChanTask <- entry
-		errStr := <-ContextInstance.ChanTaskResult
-		if errStr != TaskSuccess {
-			sql = fmt.Sprintf(UpdateTaskStauts, TaskFailed, id)
-			_, err = ContextInstance.DBEngine.Exec(sql)
+	}
+}
+
+func SetTaskResult() {
+	for taskResult := range ContextInstance.ChanTaskResult {
+		if taskResult.Status != TaskSuccess {
+			sql := fmt.Sprintf(UpdateTaskStauts, TaskFailed, Need, taskResult.Id)
+			_, err := ContextInstance.DBEngine.Exec(sql)
 			if err != nil {
 				msg := fmt.Sprintf("task run failed, msg: %v", err)
 				log.Println(msg)
@@ -62,8 +66,8 @@ func Actuator() {
 			return
 		}
 
-		sql = fmt.Sprintf(UpdateTaskStauts, TaskSuccess, id)
-		_, err = ContextInstance.DBEngine.Exec(sql)
+		sql := fmt.Sprintf(UpdateTaskStauts, TaskSuccess, NotNeed, taskResult.Id)
+		_, err := ContextInstance.DBEngine.Exec(sql)
 		if err != nil {
 			msg := fmt.Sprintf("task run failed, msg: %v", err)
 			log.Println(msg)

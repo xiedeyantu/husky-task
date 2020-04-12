@@ -13,3 +13,9 @@ const (
 	ExecutorLeader = "leader"
 	ExecutorWorker = "worker"
 )
+
+// dispatche status
+const (
+	Need    = "Need"
+	NotNeed = "NotNeed"
+)

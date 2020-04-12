@@ -10,6 +10,9 @@ import (
 var (
 	QueryNoDispatcherTask = "SELECT id FROM `task` WHERE `executor_name`=''"
 	DispatcherTask        = "UPDATE `task` SET `executor_name`='%s',`status`='%s' WHERE id='%s'"
+	ReDispatcherExecutor  = "UPDATE `task` SET `executor_name`='%s',`status`='Distributed',`need_scan`='Need' " +
+		"WHERE `status`!='Success' and `update_time` < DATE_SUB(NOW(), INTERVAL %s MINUTE)"
+	ReDispatcherInterval = "5" // minutes
 )
 
 func Dispatcher() {
@@ -49,6 +52,25 @@ func Dispatcher() {
 			log.Println(msg)
 			return
 		}
+	}
+}
+
+func ReDispatcher() {
+	if !ContextInstance.IsLeader {
+		return
+	}
+
+	sql, err := AssembleSQL(ReDispatcherExecutor, ContextInstance.ExecutorName, ReDispatcherInterval)
+	if err != nil {
+		msg := fmt.Sprintf("sql assemble error, msg: %v", err)
+		log.Println(msg)
+		return
+	}
+	_, err = ContextInstance.DBEngine.Exec(sql)
+	if err != nil {
+		msg := fmt.Sprintf("register executor failed, msg: %v", err)
+		log.Println(msg)
+		return
 	}
 }
 
