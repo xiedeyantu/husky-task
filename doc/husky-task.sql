@@ -18,6 +18,7 @@ CREATE TABLE `task` (
   `type` varchar(32) DEFAULT NULL,
   `context` text,
   `executor_name` varchar(32) DEFAULT '',
+  `need_scan` varchar(32) DEFAULT 'Need',
   `status` varchar(32) DEFAULT '',
   `update_time` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
