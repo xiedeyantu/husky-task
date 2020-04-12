@@ -2,50 +2,54 @@ package core
 
 import (
 	"fmt"
+	"log"
 )
 
 var (
-	ScannerSelectSQL = "SELECT `name`,`type` FROM executors WHERE `status`='UP'"
+	ScannerActiveExecutor = "SELECT `name`,`type` FROM `executor`"
 )
 
 func Scanner() {
-	rows, err := ContextInstance.DBEngine.Query(ScannerSelectSQL)
+	rows, err := ContextInstance.DBEngine.Query(ScannerActiveExecutor)
 	if err != nil {
-		msg := fmt.Sprintf("register executor failed, msg: %v", err)
-		println(msg)
+		msg := fmt.Sprintf("scanner executor failed, msg: %v", err)
+		log.Println(msg)
+		return
 	}
 
 	var (
-		executorName  string
-		executorType  string
-		isExitsLeader bool
-		isMyselfAlive bool
+		executorName   string
+		executorType   string
+		isLeaderExits  bool
+		isMyselfActive bool
 	)
-	tmpMap := map[string]string{}
+	tmpExecutorMap := map[string]string{}
 	for rows.Next() {
 		err = rows.Scan(&executorName, &executorType)
 		if err != nil {
-			msg := fmt.Sprintf("register executor failed, msg: %v", err)
-			println(msg)
+			msg := fmt.Sprintf("scan rows failed, msg: %v", err)
+			log.Println(msg)
+			return
 		}
-		tmpMap[executorName] = executorType
+		tmpExecutorMap[executorName] = executorType
 		if executorName == ContextInstance.ExecutorName {
-			isMyselfAlive = true
+			isMyselfActive = true
 		}
-		if executorType == "leader" {
-			isExitsLeader = true
+		if executorType == ExecutorLeader {
+			isLeaderExits = true
 		}
 	}
 
-	ContextInstance.m.Lock()
-	ContextInstance.ExecutorMap = tmpMap
-	ContextInstance.m.Unlock()
+	// refresh executor map
+	ContextInstance.mLock.Lock()
+	ContextInstance.ExecutorMap = tmpExecutorMap
+	ContextInstance.mLock.Unlock()
 
-	if !isMyselfAlive {
+	if !isMyselfActive {
 		Register(ContextInstance.ExecutorName)
 	}
 
-	if !isExitsLeader {
+	if !isLeaderExits {
 		Elector()
 		Scanner()
 	}

@@ -2,34 +2,42 @@ package core
 
 import (
 	"fmt"
+	"log"
 )
 
 var (
-	ElectorSelectSQL = "SELECT `name` FROM executors WHERE `status`='UP' ORDER BY id LIMIT 1"
-	ElectorUpdateSQL = "UPDATE executors SET `type`='leader' WHERE `name`='%s'"
+	QueryLeader = "SELECT `name` FROM `executor` ORDER BY `id` LIMIT 1"
+	SetLeader   = "UPDATE `executor` SET `type`='leader' WHERE `name`='%s'"
 )
 
 func Elector() {
-	rows, err := ContextInstance.DBEngine.Query(ElectorSelectSQL)
+	rows, err := ContextInstance.DBEngine.Query(QueryLeader)
 	if err != nil {
-		msg := fmt.Sprintf("register executor failed, msg: %v", err)
-		println(msg)
+		msg := fmt.Sprintf("elector executor failed, msg: %v", err)
+		log.Println(msg)
+		return
 	}
 
 	var executorName string
 	for rows.Next() {
 		err = rows.Scan(&executorName)
 		if err != nil {
-			msg := fmt.Sprintf("register executor failed, msg: %v", err)
-			println(msg)
+			msg := fmt.Sprintf("scan rows failed, msg: %v", err)
+			log.Println(msg)
+			return
 		}
 	}
 
 	if !ContextInstance.IsLeader && executorName == ContextInstance.ExecutorName {
-		sql := fmt.Sprintf(ElectorUpdateSQL, executorName)
-		_, err := ContextInstance.DBEngine.Exec(sql)
+		sql, err := AssembleSQL(SetLeader, executorName)
 		if err != nil {
-			msg := fmt.Sprintf("clean executor failed, msg: %v", err)
+			msg := fmt.Sprintf("sql assemble error, msg: %v", err)
+			log.Println(msg)
+			return
+		}
+		_, err = ContextInstance.DBEngine.Exec(sql)
+		if err != nil {
+			msg := fmt.Sprintf("set leader failed, msg: %v", err)
 			println(msg)
 		}
 		ContextInstance.IsLeader = true

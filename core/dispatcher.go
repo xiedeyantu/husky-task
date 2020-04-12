@@ -2,13 +2,14 @@ package core
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 )
 
 var (
-	TaskSelectSQL = "SELECT id FROM `task` WHERE `executor_name`=''"
-	TaskUpdateSQL = "UPDATE `task` SET `executor_name`='%s',`status`='%s' WHERE id='%s'"
+	QueryNoDispatcherTask = "SELECT id FROM `task` WHERE `executor_name`=''"
+	DispatcherTask        = "UPDATE `task` SET `executor_name`='%s',`status`='%s' WHERE id='%s'"
 )
 
 func Dispatcher() {
@@ -16,21 +17,22 @@ func Dispatcher() {
 		return
 	}
 
-	rows, err := ContextInstance.DBEngine.Query(TaskSelectSQL)
+	rows, err := ContextInstance.DBEngine.Query(QueryNoDispatcherTask)
 	if err != nil {
-		msg := fmt.Sprintf("register executor failed, msg: %v", err)
-		println(msg)
+		msg := fmt.Sprintf("dispatche task failed, msg: %v", err)
+		log.Println(msg)
+		return
 	}
 
-	var ids []string
+	var taskIds []string
 	for rows.Next() {
 		var id string
 		err = rows.Scan(&id)
 		if err != nil {
-			msg := fmt.Sprintf("register executor failed, msg: %v", err)
+			msg := fmt.Sprintf("scan rows failed, msg: %v", err)
 			println(msg)
 		}
-		ids = append(ids, id)
+		taskIds = append(taskIds, id)
 	}
 
 	executorSlice := mapToSlice()
@@ -38,20 +40,21 @@ func Dispatcher() {
 		return
 	}
 	rand.Seed(time.Now().Unix())
-	for _, id := range ids {
+	for _, taskId := range taskIds {
 		executorName := executorSlice[rand.Intn(len(executorSlice))]
-		sql := fmt.Sprintf(TaskUpdateSQL, executorName, "Distributed", id)
+		sql := fmt.Sprintf(DispatcherTask, executorName, TaskDistributed, taskId)
 		_, err := ContextInstance.DBEngine.Exec(sql)
 		if err != nil {
 			msg := fmt.Sprintf("register executor failed, msg: %v", err)
-			println(msg)
+			log.Println(msg)
+			return
 		}
 	}
 }
 
 func mapToSlice() []string {
-	ContextInstance.m.Lock()
-	defer ContextInstance.m.Unlock()
+	ContextInstance.mLock.Lock()
+	defer ContextInstance.mLock.Unlock()
 	s := make([]string, 0, len(ContextInstance.ExecutorMap))
 	for k, _ := range ContextInstance.ExecutorMap {
 		s = append(s, k)

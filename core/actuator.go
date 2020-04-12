@@ -2,20 +2,22 @@ package core
 
 import (
 	"fmt"
-	"time"
+	"husky-task/model"
+	"log"
 )
 
 var (
-	ActuatorSelectSQL    = "SELECT `id`,`context` FROM `task` WHERE `status`='Distributed' and `executor_name`='%s'"
-	SetActuatorStatusSQL = "UPDATE `task` SET `status`='%s',`update_time`=now() WHERE `id`=%d"
+	QueryTask        = "SELECT `id`,`context` FROM `task` WHERE `need_scan`='Need' and `executor_name`='%s'"
+	UpdateTaskStauts = "UPDATE `task` SET `status`='%s',`need_scan`='NotNeed',`update_time`=now() WHERE `id`=%d"
 )
 
 func Actuator() {
-	sql := fmt.Sprintf(ActuatorSelectSQL, ContextInstance.ExecutorName)
+	sql := fmt.Sprintf(QueryTask, ContextInstance.ExecutorName)
 	rows, err := ContextInstance.DBEngine.Query(sql)
 	if err != nil {
 		msg := fmt.Sprintf("register executor failed, msg: %v", err)
-		println(msg)
+		log.Println(msg)
+		return
 	}
 
 	task := map[int]string{}
@@ -27,28 +29,45 @@ func Actuator() {
 		err = rows.Scan(&id, &context)
 		if err != nil {
 			msg := fmt.Sprintf("register executor failed, msg: %v", err)
-			println(msg)
+			log.Println(msg)
+			return
 		}
 		task[id] = context
 	}
 
 	for id, ctx := range task {
-		sql := fmt.Sprintf(SetActuatorStatusSQL, "Running", id)
+		sql := fmt.Sprintf(UpdateTaskStauts, TaskRunning, id)
 		_, err := ContextInstance.DBEngine.Exec(sql)
 		if err != nil {
 			msg := fmt.Sprintf("renew executor failed, msg: %v", err)
-			println(msg)
+			log.Println(msg)
+			return
 		}
 
 		// process business
-		println("ctx:" + string(ctx))
-		time.Sleep(2 * time.Second)
+		entry := model.Task{
+			Id:      id,
+			Context: ctx,
+		}
+		ContextInstance.ChanTask <- entry
+		errStr := <-ContextInstance.ChanTaskResult
+		if errStr != TaskSuccess {
+			sql = fmt.Sprintf(UpdateTaskStauts, TaskFailed, id)
+			_, err = ContextInstance.DBEngine.Exec(sql)
+			if err != nil {
+				msg := fmt.Sprintf("task run failed, msg: %v", err)
+				log.Println(msg)
+				return
+			}
+			return
+		}
 
-		sql = fmt.Sprintf(SetActuatorStatusSQL, "Success", id)
+		sql = fmt.Sprintf(UpdateTaskStauts, TaskSuccess, id)
 		_, err = ContextInstance.DBEngine.Exec(sql)
 		if err != nil {
-			msg := fmt.Sprintf("renew executor failed, msg: %v", err)
-			println(msg)
+			msg := fmt.Sprintf("task run failed, msg: %v", err)
+			log.Println(msg)
+			return
 		}
 	}
 }

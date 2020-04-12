@@ -8,6 +8,7 @@ type Task struct {
 	Type         string
 	Context      string
 	ExecutorName string
+	NeedScan     string
 	Status       string
 	UpdateTime   time.Time
 }

@@ -2,18 +2,24 @@ package core
 
 import (
 	"fmt"
+	"log"
 )
 
-var RegisterSQL = "INSERT INTO executors (`name`,`status`,`renew_time`) VALUES ('%s','%s',now()) " +
-	"ON DUPLICATE KEY UPDATE `status`='UP',`renew_time`=now()"
+var RegisterExecutor = "INSERT INTO `executor` (`name`,`renew_time`) VALUES ('%s',now()) " +
+	"ON DUPLICATE KEY UPDATE `renew_time`=now()"
 
 func Register(name string) {
-	ContextInstance.ExecutorName = name
-	sql := fmt.Sprintf(RegisterSQL, ContextInstance.ExecutorName, "UP")
-	_, err := ContextInstance.DBEngine.Exec(sql)
+	sql, err := AssembleSQL(RegisterExecutor, name)
+	if err != nil {
+		msg := fmt.Sprintf("sql assemble error, msg: %v", err)
+		log.Println(msg)
+		return
+	}
+	_, err = ContextInstance.DBEngine.Exec(sql)
 	if err != nil {
 		msg := fmt.Sprintf("register executor failed, msg: %v", err)
-		println(msg)
+		log.Println(msg)
+		return
 	}
-
+	ContextInstance.ExecutorName = name
 }

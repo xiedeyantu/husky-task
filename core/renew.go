@@ -2,15 +2,22 @@ package core
 
 import (
 	"fmt"
+	"log"
 )
 
-var RenewSQL = "UPDATE executors SET `status`='UP',`renew_time`=now() WHERE `name`='%s'"
+var RenewExecutor = "UPDATE `executor` SET `renew_time`=now() WHERE `name`='%s'"
 
 func Renew() {
-	sql := fmt.Sprintf(RenewSQL, ContextInstance.ExecutorName)
-	_, err := ContextInstance.DBEngine.Exec(sql)
+	sql, err := AssembleSQL(RenewExecutor, ContextInstance.ExecutorName)
+	if err != nil {
+		msg := fmt.Sprintf("sql assemble error, msg: %v", err)
+		log.Println(msg)
+		return
+	}
+	_, err = ContextInstance.DBEngine.Exec(sql)
 	if err != nil {
 		msg := fmt.Sprintf("renew executor failed, msg: %v", err)
-		println(msg)
+		log.Println(msg)
+		return
 	}
 }

@@ -17,7 +17,7 @@ func NewCrontab(name string, intervalMS int, handler func()) (*Crontab, error) {
 		name = "default"
 	}
 	if intervalMS <= 0 {
-		intervalMS = 2
+		intervalMS = 2000
 	}
 	if handler == nil {
 		return nil, errors.New("handler should not be nil")
@@ -31,15 +31,11 @@ func NewCrontab(name string, intervalMS int, handler func()) (*Crontab, error) {
 }
 
 func (c Crontab) Start() {
-	var ch chan int
+	rand.Seed(time.Now().Unix())
 	time.Sleep(time.Duration(rand.Intn(10)) * 100 * time.Millisecond)
-	c.Handler()
-	ticker := time.NewTicker(time.Duration(c.IntervalMS) * time.Millisecond)
-	go func() {
-		for range ticker.C {
-			c.Handler()
-		}
-		ch <- 1
-	}()
-	<-ch
+	ch := time.Tick(5 * time.Second)
+	for {
+		c.Handler()
+		<-ch
+	}
 }
