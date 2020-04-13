@@ -1,7 +1,6 @@
 package executor
 
 import (
-	"github.com/gogf/gf/os/grpool"
 	"husky-task/core"
 	"husky-task/crontab"
 	"log"
@@ -17,28 +16,19 @@ var (
 
 type TaskFunc func(context string) error
 
-func StartExecutor(name string, dsn string) {
-	err := core.InitEngine(dsn)
+func StartExecutor() {
+	err := core.InitEngine(core.ContextInstance.DSN)
 	if err != nil {
 		log.Println("init db engine failed")
 		return
 	}
-	InitGRPool()
-	//core.CleanOldTask()
-	core.Register(name)
 	StartClean()
-	core.Elector()
 	StartRenew()
 	StartScanner()
 	StartReDispatcher()
 	StartDispatcher()
 	StartActuator()
 	StartSetTaskResult()
-}
-
-func InitGRPool() {
-	core.ContextInstance.GRPool = grpool.New(10)
-	core.ContextInstance.TaskGRPool = grpool.New(20)
 }
 
 func StartClean() {

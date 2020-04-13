@@ -34,6 +34,9 @@ func Scanner() {
 		tmpExecutorMap[executorName] = executorType
 		if executorName == ContextInstance.ExecutorName {
 			isMyselfActive = true
+			if executorType == ExecutorLeader {
+				ContextInstance.IsLeader = true
+			}
 		}
 		if executorType == ExecutorLeader {
 			isLeaderExits = true
@@ -46,7 +49,7 @@ func Scanner() {
 	ContextInstance.mLock.Unlock()
 
 	if !isMyselfActive {
-		Register(ContextInstance.ExecutorName)
+		Register()
 	}
 
 	if !isLeaderExits {

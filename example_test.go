@@ -11,8 +11,9 @@ import (
 )
 
 func TestExample(t *testing.T) {
-	dsn := "root:123456@tcp(192.168.80.1:3306)/test?charset=utf8"
-	executor.StartExecutor("executor-1", dsn)
+	core.ContextInstance.DSN = "root:123456@tcp(192.168.80.1:3306)/test?charset=utf8"
+	core.ContextInstance.ExecutorName = "executor-1"
+	executor.StartExecutor()
 
 	corn, err := crontab.NewCrontab("test-insert", 2000, insertTasks)
 	if err != nil || corn == nil {

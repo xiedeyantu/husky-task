@@ -8,8 +8,13 @@ import (
 var RegisterExecutor = "INSERT INTO `executor` (`name`,`renew_time`) VALUES ('%s',now()) " +
 	"ON DUPLICATE KEY UPDATE `renew_time`=now()"
 
-func Register(name string) {
-	sql, err := AssembleSQL(RegisterExecutor, name)
+func Register() {
+	if ContextInstance.ExecutorName == "" {
+		msg := "executor name should not be empty"
+		log.Println(msg)
+		return
+	}
+	sql, err := AssembleSQL(RegisterExecutor, ContextInstance.ExecutorName)
 	if err != nil {
 		msg := fmt.Sprintf("sql assemble error, msg: %v", err)
 		log.Println(msg)
@@ -21,5 +26,4 @@ func Register(name string) {
 		log.Println(msg)
 		return
 	}
-	ContextInstance.ExecutorName = name
 }
