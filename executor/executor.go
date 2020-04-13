@@ -24,6 +24,7 @@ func StartExecutor(name string, dsn string) {
 		return
 	}
 	InitGRPool()
+	//core.CleanOldTask()
 	core.Register(name)
 	StartClean()
 	core.Elector()
