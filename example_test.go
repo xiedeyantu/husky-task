@@ -3,7 +3,6 @@ package husky_task
 import (
 	"fmt"
 	"husky-task/core"
-	"husky-task/crontab"
 	"husky-task/executor"
 	"log"
 	"testing"
@@ -44,9 +43,13 @@ func TestExample(t *testing.T) {
 }
 
 func insertTasks() {
-	sql := "INSERT INTO task (`name`,`type`,`context`,`executor_name`,`status`,`need_scan`,`update_time`) " +
-		"VALUES ('task1','type1','balabala1','','','Need',NOW()),('task2','type1','balabala2','','','Need',NOW())," +
-		"('task3','type2','balabala3','','','Need',NOW()),('task4','type1','balabala4','','','Need',NOW())," +
+	sql := "INSERT INTO task " +
+		"(`name`,`type`,`context`,`executor_name`,`status`,`need_scan`,`update_time`) " +
+		"VALUES " +
+		"('task1','type1','balabala1','','','Need',NOW())," +
+		"('task2','type1','balabala2','','','Need',NOW())," +
+		"('task3','type2','balabala3','','','Need',NOW())," +
+		"('task4','type1','balabala4','','','Need',NOW())," +
 		"('task5','type2','balabala5','','','Need',NOW())"
 	_, err := core.ContextInstance.DBEngine.Exec(sql)
 	if err != nil {

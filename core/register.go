@@ -5,8 +5,7 @@ import (
 	"log"
 )
 
-var RegisterExecutor = "INSERT INTO `executor` (`name`,`renew_time`) VALUES ('%s',now()) " +
-	"ON DUPLICATE KEY UPDATE `renew_time`=now()"
+var RegisterExecutor = "INSERT INTO `executor` (`name`,`renew_time`) VALUES ('%s',now())"
 
 func Register() {
 	if ContextInstance.ExecutorName == "" {

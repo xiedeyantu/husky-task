@@ -11,7 +11,7 @@ var (
 	QueryNoDispatcherTask = "SELECT id FROM `task` WHERE `executor_name`=''"
 	DispatcherTask        = "UPDATE `task` SET `executor_name`='%s',`status`='%s' WHERE id='%s'"
 	ReDispatcherExecutor  = "UPDATE `task` SET `executor_name`='%s',`status`='Distributed',`need_scan`='Need' " +
-		"WHERE `status`!='Success' and `update_time` < DATE_SUB(NOW(), INTERVAL %s MINUTE)"
+		"WHERE `status`!='Success' and `update_time` < DATE_SUB(NOW(), INTERVAL %s MINUTE) LIMIT 1000"
 	ReDispatcherInterval = "5" // minutes
 )
 

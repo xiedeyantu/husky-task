@@ -27,7 +27,7 @@ func init() {
 		ExecutorMap:    map[string]string{},
 		IsLeader:       false,
 		GRPool:         grpool.New(10),
-		TaskGRPool:     grpool.New(20),
+		TaskGRPool:     grpool.New(50),
 		ChanTask:       make(chan model.Task, 0),
 		ChanTaskResult: make(chan model.Task, 0),
 	}
